@@ -72,9 +72,9 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK nightly-master 2018-12-31
-  set(ITK_GIT_TAG "4cf99119f0")
+  set(ITK_REPOSITORY "https://github.com/thewtex/ITK.git")
+  # ITK nightly-master 2019-01-02
+  set(ITK_GIT_TAG "d38194fbddabf77d44a51dd38dc3d105ba2cfbdf")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -154,7 +154,7 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
 
   # CMake configuration variables to pass to ITK's build
-  set(ep_itk_cmake_cache_args "")
+  set(ep_itk_cmake_cache_args "-DSKBUILD:BOOL=ON")
   foreach(var
     BUILD_SHARED_LIBS
     ITK_BUILD_DEFAULT_MODULES
@@ -221,6 +221,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
         -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
         -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
+        -DBUILD_SHARED_LIBS:BOOL=ON
         ${ep_common_cmake_cache_args}
         ${ep_itk_cmake_cache_args}
       USES_TERMINAL_DOWNLOAD 1

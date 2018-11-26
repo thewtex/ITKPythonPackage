@@ -67,6 +67,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
             -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
             -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+            -DBUILD_SHARED_LIBS:BOOL=ON \
             -DITK_WRAP_DOC:BOOL=ON \
             -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
       # Cleanup
@@ -98,6 +99,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
+          -DBUILD_SHARED_LIBS:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
@@ -120,6 +122,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DBUILD_SHARED_LIBS:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1
