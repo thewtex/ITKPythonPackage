@@ -19,8 +19,11 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    if [[ -e /work/requirements-dev.txt ]]; then
+    if test "${ARCH}" == "x64" && test -e /work/requirements-dev.txt; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+    else
+      unzip -d ${PYBIN}/../lib/python3.*/site-packages/ /tmp/${skbuild_whl}
+      unzip -o -d ${PYBIN}/../lib/python3.*/site-packages/ /tmp/${wheel_whl}
     fi
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later
@@ -52,7 +55,19 @@ done
 
 # Since there are no external shared libraries to bundle into the wheels
 # this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
-for whl in dist/*linux_$(uname -p).whl; do
-    auditwheel repair ${whl} -w /work/dist/
-    rm ${whl}
+#for whl in dist/*linux_$(uname -p).whl; do
+    #auditwheel repair ${whl} -w /work/dist/
+    #rm ${whl}
+#done
+if test "${ARCH}" == "x64"; then
+  /opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
+  # Since there are no external shared libraries to bundle into the wheels
+  # this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
+  for whl in dist/itk_*linux_$(uname -p).whl; do
+      /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
+      rm ${whl}
+  done
+fi
+for itk_wheel in dist/itk-*linux*.whl; do
+  mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
 done

@@ -31,7 +31,12 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     # Install dependencies
-    ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+    if test "${ARCH}" == "x64"; then
+      ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+    else
+      unzip -o -d ${PYBIN}/../lib/python3.*/site-packages/ /tmp/${skbuild_whl}
+      unzip -o -d ${PYBIN}/../lib/python3.*/site-packages/ /tmp/${wheel_whl}
+    fi
 
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
