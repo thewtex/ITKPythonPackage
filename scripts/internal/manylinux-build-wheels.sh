@@ -50,6 +50,14 @@ sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64
 
 SINGLE_WHEEL=0
+if test "${TARGET_ARCH}" == "x64"; then
+    compiler_target="x86_64"
+elif test "${TARGET_ARCH}" == "aarch64"; then
+    compiler_target="aarch64"
+else
+    echo "Unsupported TARGET_ARCH: ${TARGET_ARCH}"
+    exit 1
+fi
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -91,7 +99,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_WRAP_double:BOOL=ON \
             -DITK_WRAP_complex_double:BOOL=ON \
             -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-            -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+            -DCMAKE_CXX_COMPILER_TARGET:STRING=${compiler_target}-linux-gnu \
             -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
             -DCMAKE_C_FLAGS:STRING="$compile_flags" \
             -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -120,7 +128,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DBUILD_TESTING:BOOL=OFF \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+          -DCMAKE_CXX_COMPILER_TARGET:STRING=${compiler_target}-linux-gnu \
           -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
           -DCMAKE_C_FLAGS:STRING="$compile_flags" \
           -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -175,7 +183,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
 done
 
-if test "${ARCH}" == "x64"; then
+if test "${TARGET_ARCH}" == "x64"; then
   sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_$(uname -m).whl; do
@@ -183,7 +191,7 @@ if test "${ARCH}" == "x64"; then
       rm ${whl}
   done
 else
-  for whl in dist/itk_*$(uname -m).whl; do
+  for whl in dist/itk_*.whl; do
       auditwheel repair ${whl} -w /work/dist/
       rm ${whl}
   done
@@ -210,12 +218,17 @@ for itk_wheel in dist/itk*.whl.whl; do
   mv $itk_wheel dist/$(basename $itk_wheel .whl)
 done
 
+emulator=""
+if test "${TARGET_ARCH}" == "aarch64"; then
+  emulator=/usr/bin/qemu-aarch64
+fi
+
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
-    ${PYBIN}/pip install --user numpy
-    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
-    (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
-    (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-    (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/test.py )
+    ${emulator} ${PYBIN}/pip install --user numpy
+    ${emulator} ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
+    (cd $HOME && ${emulator} ${PYBIN}/python -c 'from itk import ITKCommon;')
+    (cd $HOME && ${emulator} ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+    (cd $HOME && ${emulator} ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${emulator} ${PYBIN}/python ${script_dir}/../../docs/code/test.py )
 done

@@ -15,12 +15,12 @@
 # ===========================================
 # ENVIRONMENT VARIABLES
 #
-# These variables are set with the `export` bash command before calling the script.# 
+# These variables are set with the `export` bash command before calling the script.#
 # For example,
 #
 #   export MANYLINUX_VERSION="_2_28"
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
-# 
+#
 # `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
 #   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
 #
@@ -29,7 +29,7 @@
 #   For instance, `export MANYLINUX_VERSION=2014`
 #
 # `TARGET_ARCH`: Target architecture for which wheels should be built.
-#   For instance, `export MANYLINUX_VERSION=aarch64`
+#   For instance, `export TARGET_ARCH=aarch64`
 #
 # `IMAGE_TAG`: Specialized manylinux image tag to use for building.
 #   For instance, `export IMAGE_TAG=20221205-459c9f0`.
@@ -68,28 +68,14 @@ if [[ -n ${LD_LIBRARY_PATH} ]]; then
   done
 fi
 
-if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
-  echo "Install aarch64 architecture emulation tools to perform build for ARM platform"
+# Generate dockcross scripts
+docker run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux
+chmod u+x /tmp/dockcross-manylinux
 
-  if [[ ! ${NO_SUDO} ]]; then
-    docker_prefix="sudo"
-  fi
-
-  ${docker_prefix} docker run --privileged --rm tonistiigi/binfmt --install all
-
-  # Build wheels
-  DOCKER_ARGS+=" -v $(pwd):/work/ --rm"
-  ${docker_prefix} docker run $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
-else
-  # Generate dockcross scripts
-  docker run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
-  chmod u+x /tmp/dockcross-manylinux-x64
-
-  # Build wheels
-  /tmp/dockcross-manylinux-x64 \
-    -a "$DOCKER_ARGS" \
-    "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
-fi
+# Build wheels
+/tmp/dockcross-manylinux \
+  -a "$DOCKER_ARGS" \
+  "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
 
 if [[ -z ${ITK_MODULE_NO_CLEANUP} ]]; then
   source "${script_dir}/dockcross-manylinux-cleanup.sh"

@@ -49,7 +49,7 @@ case $(uname -m) in
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
             pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
+            curl https://data.kitware.com/api/v1/file/64067bca7b0dfcc98f66ad14/download -o doxygen-1.8.16.linux.bin.tar.gz
             tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
           popd > /dev/null 2>&1
         fi

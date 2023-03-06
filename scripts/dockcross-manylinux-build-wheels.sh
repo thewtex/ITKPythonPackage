@@ -7,7 +7,7 @@
 #
 #   scripts/dockcross-manylinux-build-wheels.sh cp39
 #
-# A specialized manylinux image and tag can be used by exporting to 
+# A specialized manylinux image and tag can be used by exporting to
 # MANYLINUX_VERSION and IMAGE_TAG before running this script.
 # See https://github.com/dockcross/dockcross for available versions and tags.
 #
@@ -18,29 +18,29 @@
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+# Handle case where the script directory is not the working directory
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
-if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20230106-1aeaea0}
-elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20230106-1aeaea0}
-else
-  echo "Unknown manylinux version ${MANYLINUX_VERSION}"
-  exit 1;
-fi
+# Set
+#
+# ITK_PACKAGE_VERSION
+# ITKPYTHONPACKAGE_ORG
+# ITKPYTHONPACKAGE_TAG
+# MANYLINUX_VERSION
+# TARGET_ARCH
+# IMAGE_TAG
+source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
 # Generate dockcross scripts
-docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
-chmod u+x /tmp/dockcross-manylinux-x64
-
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG} > /tmp/dockcross-manylinux-${TARGET_ARCH}
+chmod u+x /tmp/dockcross-manylinux-${TARGET_ARCH}
 
 # Build wheels
 pushd $script_dir/..
 mkdir -p dist
 DOCKER_ARGS="-v $(pwd)/dist:/work/dist/"
-DOCKER_ARGS+=" -e MANYLINUX_VERSION"
-/tmp/dockcross-manylinux-x64 \
+DOCKER_ARGS+=" -e MANYLINUX_VERSION -e TARGET_ARCH"
+/tmp/dockcross-manylinux-${TARGET_ARCH} \
   -a "$DOCKER_ARGS" \
   ./scripts/internal/manylinux-build-wheels.sh "$@"
 popd

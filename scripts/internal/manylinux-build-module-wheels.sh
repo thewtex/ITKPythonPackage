@@ -64,6 +64,19 @@ PYTHON_VERSION="$@"
 #
 ARCH=""
 PYBINARIES=""
+if test "${TARGET_ARCH}" == "x64"; then
+    compiler_target="x86_64"
+elif test "${TARGET_ARCH}" == "aarch64"; then
+    compiler_target="aarch64"
+else
+    echo "Unsupported TARGET_ARCH: ${TARGET_ARCH}"
+    exit 1
+fi
+emulator=""
+if test "${TARGET_ARCH}" == "aarch64"; then
+  emulator=/usr/bin/qemu-aarch64
+fi
+
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
@@ -83,9 +96,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     if [[ -e /work/requirements-dev.txt ]]; then
-      ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+      ${emulator} ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
     elif [[ -e /ITKPythonPackage/requirements-dev.txt ]]; then
-      ${PYBIN}/pip install --upgrade -r /ITKPythonPackage/requirements-dev.txt
+      ${emulator} ${PYBIN}/pip install --upgrade -r /ITKPythonPackage/requirements-dev.txt
     fi
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later
@@ -108,7 +121,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swig/bin/swig \
-      -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+      -DCMAKE_CXX_COMPILER_TARGET:STRING=${compiler_target}-linux-gnu \
       -DCMAKE_INSTALL_LIBDIR:STRING=lib \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
@@ -120,7 +133,7 @@ done
 # Make sure auditwheel is installed for this python exe before importing
 # it in auditwheel_whitelist_monkeypatch.py
 sudo ${Python3_EXECUTABLE} -m pip install auditwheel
-for whl in dist/*linux*$(uname -m).whl; do
+for whl in dist/*linux*.whl; do
   # Repair wheel using monkey patch to exclude shared libraries provided in whitelist
   ${Python3_EXECUTABLE} "${script_dir}/auditwheel_whitelist_monkeypatch.py" \
     repair ${whl} -w /work/dist/ --whitelist "${EXCLUDE_LIBS}"
